@@ -65,13 +65,15 @@ class Account:
     
         """
         newTransaction = withdrawDepositTransaction(self, depositAmount)
-        newTransaction.applyDepositWithdraw()
+        newTransaction.applyWithdrawDeposit()
         
         
         
     
     def withdraw(self, withdrawAmount):
-        """Deducts the given amount of money from the account's balance.
+        """Deducts the given amount of money from the account's balance. 
+        In order to withdrawDepositTransaction function is called with negative amount
+        given. 
     
     Parameters
     ----------
@@ -79,18 +81,90 @@ class Account:
         Amount of money to be deducted from the account balance
     
     """
+        # below, basically deposit is done with the negative amount of money
         newTransaction = withdrawDepositTransaction(self, (-1*withdrawAmount))
         newTransaction.applyDepositWithdraw()
 
-class Client:
-    """Client  class.
-
-    This class will simulate an account with various methods.
+class Person:
+    """Person  class is the parent class of all human simulations.
     """
-    id = 0
+    def __init__(self, name, surname, gender, birthYear, birthMonth, birthDay, nationalId, emailAddress):
+        """Creates a person.
+        
+        Parameters
+        ----------
+        name : str
+            Person's Name
+        surname : str
+            Person's Surname
+        birthYear : int
+            Person's birth Year (ex: 1985)
+        birthMonth : int
+            Person's birth Month between 1-12
+        birthDay : int
+            Person's birth Day between 1-31
+        nationalId : int
+            Person's national ID number
+        emailAddress : str
+            Person's email address
+        Returns
+        -------
+        
+        """   
+        self.name = name
+        self.surname = surname
+        self.birthDate = datetime.datetime(birthYear, birthMonth, birthDay)
+        currentYear = int(datetime.datetime.today().year)
+        self.age = currentYear - birthYear
+        self.activeAccountList = list()
+        self.closedAccountList = list()
+        self.nationalId = nationalId
+        self.gender = gender
+        self.email = emailAddress
+
+class Employee(Person):
+    """Employee  class - inherited from Person Class.
+
+    This class will simulate a Employee with various methods.
+    """
+    employeeId = 0
+    employeeList = list()
+    def __init__(self, name, surname, gender, birthYear, birthMonth, birthDay, nationalId, emailAddress, department):
+        super().__init__(name, surname, gender, birthYear, birthMonth, birthDay, nationalId, emailAddress)
+        """Creates a client and appends it to the Client Class' clientList class property.
+        
+        Parameters
+        ----------
+        name : str
+            Employee Name
+        surname : str
+            Employee Surname
+        birthYear : int
+            Employee birth Year (ex: 1985)
+        birthMonth : int
+            Employee birth Month between 1-12
+        birthDay : int
+            Employee birth Day between 1-31
+        nationalId : int
+            Employee national ID number
+        emailAddress : str
+            Employee email address
+        department : str
+            Employee's department
+        Returns
+        -------
+        
+        """ 
+
+class Client(Person):
+    """Client  class- inherited from Person Class.
+
+    This class will simulate a Client with various methods.
+    """
+    clientId = 0
     clientList = list()
 
-    def __init__(self, name, surname, gender, birthYear, birthMonth, birthDay, nationalId):
+    def __init__(self, name, surname, gender, birthYear, birthMonth, birthDay, nationalId, emailAddress):
         """Creates a client and appends it to the Client Class' clientList class property.
     
     Parameters
@@ -112,21 +186,16 @@ class Client:
     -------
     
     """
-        Client.id += 1
-        self.name = name
-        self.surname = surname
-        self.birthDate = datetime.datetime(birthYear, birthMonth, birthDay)
-        currentYear = int(datetime.datetime.today().year)
-        self.age = currentYear - birthYear
-        self.id = Client.id
+        super().__init__(name, surname, gender, birthYear, birthMonth, birthDay, nationalId, emailAddress)
+        Client.clientId += 1
+        
+        self.clientId = Client.clientId
         self.activeAccountList = list()
         self.closedAccountList = list()
-        self.nationalId = nationalId
-        self.gender = gender
         Client.clientList.append(self)
 
     def __str__(self):
-        return f'Name: {self.name} {self.surname}\ Age: {self.age}. Number of Active Accounts: {str(len(self.activeAccountList))} Number of Closed Accounts: {str(len(self.closedAccountList))}'
+        return f'Client Name: {self.name} {self.surname}\ Age: {self.age}. Number of Active Accounts: {str(len(self.activeAccountList))} Number of Closed Accounts: {str(len(self.closedAccountList))}'
     
     def __repr__(self):
         return f'Client(\'{self.name}\', \'{self.surname}\', {self.birthDate}, {self.age})'
@@ -184,7 +253,19 @@ class Transaction:
         self.date = datetime.datetime.today()
         self.account = account
     
-    def applyDepositWithdraw(self):
+    def addToTransactionList(self):
+        """appends given transaction to the account's transactionList. 
+        
+        Parameters
+        ----------
+        
+        Returns
+        -------
+        
+        """
+        self.account.transactionList.append(self)
+
+    def applyWithdrawDeposit(self):
         """Applies given transaction to the transaction's account. 
         
         Parameters
@@ -197,22 +278,9 @@ class Transaction:
         newBalance = AccountArithmetics.calculateNewBalance(self.account.balance, self.amount)
         self.lastBalance = newBalance
         self.account.setBalance(newBalance)
-        self.account.transactionList.append(self)
+        self.addToTransactionList()
     
-    def applyWithdraw(self):
-        """Applies given transaction to the transaction's account. 
-        
-        Parameters
-        ----------
-        
-        Returns
-        -------
-        
-        """
-        newBalance = AccountArithmetics.calculateNewBalance(self.account.balance, (-1 * self.amount))
-        self.lastBalance = newBalance
-        self.account.setBalance(newBalance)
-        self.account.transactionList.append(self)
+    
         
 
 class withdrawDepositTransaction(Transaction):
@@ -230,7 +298,7 @@ class withdrawDepositTransaction(Transaction):
         -------
         
         """
-        super().__init__( account)
+        super().__init__(account)
         self.amount = amount
         self.previousBalance = self.account.balance
         self.lastBalance = 0
@@ -247,7 +315,7 @@ class withdrawDepositTransaction(Transaction):
 class AccountArithmetics:
 
     def calculateNewBalance(currentBalance, amount):
-        """Calculates  and returnsnew balance from currentBalance and amount values.
+        """Calculates  and returns new balance from currentBalance and amount values.
         
     
         Parameters
@@ -263,6 +331,7 @@ class AccountArithmetics:
         balanceInCents = currentBalance * 100 + depositInCents
         newBalance = float("{:.2f}".format(balanceInCents/100))
         return newBalance        
+
 
 
 
